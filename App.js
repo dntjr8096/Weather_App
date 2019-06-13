@@ -2,21 +2,25 @@ import React, { Component } from "react";
 import { StyleSheet, Text, View, StatusBar } from "react-native";
 import Weather from "./Weather";
 
+const API_KEY = "6209c26a297b91f5d13d29fbde22582e";
+
 export default class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
       isLoaded: false,
-      error: null
+      error: null,
+      temp: null,
+      weather: null
     };
   }
 
   componentDidMount() {
     navigator.geolocation.getCurrentPosition(
       position => {
-        this.setState({
-          isLoaded: true
-        });
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        this._getWeather(lat, lon);
       },
       error => {
         this.setState({
@@ -26,14 +30,27 @@ export default class App extends Component {
     );
   }
 
+  _getWeather = (lat, lon) => {
+    fetch(
+      `http://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&APPID=${API_KEY}&units=metric`
+    )
+      .then(response => response.json())
+      .then(json => {
+        this.setState({
+          temp: json.main.temp,
+          weather: json.weather[0].main,
+          isLoaded: true
+        });
+      });
+  };
   render() {
-    const { isLoaded, error } = this.state;
+    const { isLoaded, error, temp, weather } = this.state;
 
     return (
       <View style={styles.container}>
         <StatusBar hidden={true} />
         {isLoaded ? (
-          <Weather />
+          <Weather weatherName={weather} temperature={temp} />
         ) : (
           <View style={styles.loading}>
             <Text style={styles.loadingText}>Getting the fucking weather</Text>
